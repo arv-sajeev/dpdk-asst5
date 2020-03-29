@@ -30,7 +30,7 @@ kni_config_network_if(uint16_t port_id,uint8_t if_up){
 // Dummy function 2 for kni_ops
 static int 
 kni_change_mtu(uint16_t port_id,unsigned int new_mtu){
-	printf("\nThe port id in KNI is %d.\nTrying to set = %d",port_id,if_up);
+	printf("\nThe port id in KNI is %d.\nTrying to set MTU = %d",port_id,new_mtu);
 	return 0;
 }
 
@@ -52,7 +52,7 @@ kni_create(const char* name,struct rte_mempool *mempool){
 	//Fill up kni_conf
 	
 	strncpy(kni_conf.name,name,10);
-	kni_conf.groupid = 0;
+	kni_conf.group_id = 0;
 	kni_conf.mbuf_size = RTE_MBUF_DEFAULT_DATAROOM;
 	kni_conf.mtu = 1500;
 	kni_conf.min_mtu = 68;

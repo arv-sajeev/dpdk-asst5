@@ -35,12 +35,12 @@ rte_eth_conf port_conf_default = {
 	.rxmode = {
 		.max_rx_pkt_len = RTE_ETHER_MAX_LEN,	
 	},
-}
+};
 
 int
 init_port(int port_id,struct rte_mempool *mempool){
 	struct rte_eth_dev_info dev_info;
-	struct rte_eth_tx_conf tx_conf;
+	struct rte_eth_txconf tx_conf;
 	uint16_t rx_rings = RING_SIZE;
 	uint16_t tx_rings = RING_SIZE;
 	struct rte_eth_conf port_conf = port_conf_default;
@@ -93,7 +93,7 @@ init_port(int port_id,struct rte_mempool *mempool){
 	printf("\nTX queue setup successfull");
 
 	//Start the device
-	ret_val = rte_eth_dev_start(port_id)
+	ret_val = rte_eth_dev_start(port_id);
 	if (ret_val != 0){
 		printf("\nError while starting the ethernet device");
 		return ret_val;
@@ -103,7 +103,7 @@ init_port(int port_id,struct rte_mempool *mempool){
 	printf("\nPort initialization is complete");
 
 	//Enter promiscuous mode
-	ret_val = rte_ethpromiscuous_enable(port_id);
+	ret_val = rte_eth_promiscuous_enable(port_id);
 	if (ret_val != 0){
 		printf("\nUnable to enter to promiscuous mode");
 		return ret_val;

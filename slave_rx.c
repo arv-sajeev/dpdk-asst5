@@ -12,3 +12,34 @@
 
 #include "asst5.h"
 
+int slave_rx_main(void *args_ptr){
+	struct rte_mbuf* buffer[BURST_SIZE];
+	uint16_t rx_sz,tx_sz;
+
+	//Receive and typecast all args
+	struct lcore_args* slave_rx_args = (struct lcore_args*)args_ptr;
+	unsigned int port_id = slave_rx_args->port_id;
+	struct rte_ring	*ring_1  = slave_rx_args->ring_1;
+	struct rte_kni *kni = slave_rx_args->kni;
+
+	printf("\nIn slave_rx_main with :-\nPORT_ID - %d\nLCORE_ID - %d\nRTE_RING - %s\nKNI_NAME - %s",port_id,rte_lcore_id(),ring_1->name,rte_kni_get_name(kni));
+	
+	printf("\nStarting polling");
+
+	while(1)	{
+		// Receive burst from eth device
+		rx_sz = rte_eth_rx_burst(port_id,0,buffer,BURST_SIZE);
+		if (rx_sz == 0){
+			continue;
+		}
+		printf("\nReceived %d packets on port : %d",rx_sz,port_id);
+
+		//Enqueue to ring to worker
+		tx_sz = rte_ring_enqueue_burst(ring_1,(void *)buffer,rx_sz,NULL);
+		for (int i = tx_sz;i < rx_sz;i++){
+			rte_pktmbuf_free(buffer[i]);
+			printf("Dropped packet %d\n",i);
+		}
+		printf("\nEnqueued :: %d packets to :: %s",tx_sz,ring_1->name);
+	}
+}

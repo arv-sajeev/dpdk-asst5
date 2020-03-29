@@ -17,7 +17,7 @@ struct lcore_args{
 	struct rte_ring *ring_1;
 	struct rte_ring *ring_2;
 	struct rte_kni *kni;
-}
+};
 
 
 //Thread main functions
@@ -28,4 +28,4 @@ int slave_tx_main(void *args_ptr);
 //Intializing functions
 
 struct rte_kni* kni_create(const char* name,struct rte_mempool *mempool);
-int init_port(struct rte_mempool* mempool);
+int init_port(int port_id,struct rte_mempool* mempool);

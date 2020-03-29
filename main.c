@@ -13,7 +13,7 @@
 #include "asst5.h"
 
 int 
-main(inti argc,char **argv){
+main(int argc,char **argv){
 	
 	struct rte_mempool *mempool;
 	struct rte_kni *kni;
@@ -35,15 +35,15 @@ main(inti argc,char **argv){
 	printf("\nPorts are available");
 
 	// Check if we have enough lcore 
-	if (rte_lcore_count < 4){
+	if (rte_lcore_count() < 4){
 		rte_exit(EXIT_FAILURE,"Not enough lcores");
 	}
-	pritnf("\nAtleast 4 lcores are available");
+	printf("\nAtleast 4 lcores are available");
 
 	uint32_t main_lcore_id = rte_lcore_id();
-	uint32_t rx_lcore_id = rte_get_next_lcore_id(main_lcore_id,1,1);
-	uint32_t w_lcore_id = rte_get_next_lcore_id(rx_lcore_id,1,1);
-	uint32_t tx_lcore_id = rte_get_next_lcore_id(w_lcore_id,1,1);
+	uint32_t rx_lcore_id = rte_get_next_lcore(main_lcore_id,1,1);
+	uint32_t w_lcore_id = rte_get_next_lcore(rx_lcore_id,1,1);
+	uint32_t tx_lcore_id = rte_get_next_lcore(w_lcore_id,1,1);
 	//Create mempool buffers
 	mempool = rte_pktmbuf_pool_create(RTE_MEMPOOL_NAME,2047,130,120,RTE_MBUF_DEFAULT_BUF_SIZE,rte_socket_id());
 	printf("RTE_MBUF_DEFAULT_BUF_SIZE=%d\n",RTE_MBUF_DEFAULT_BUF_SIZE);
@@ -53,7 +53,7 @@ main(inti argc,char **argv){
 	printf("\nMempool creation complete");
 
 	// Initialize port
-	ret_val = init_port(mempool);
+	ret_val = init_port(PORT,mempool);
 	if (ret_val < 0){
 		rte_exit(EXIT_FAILURE,"\nError while port initilizing");
 	}
@@ -61,7 +61,7 @@ main(inti argc,char **argv){
 	// Pre-alloc the kni
 	ret_val =  rte_kni_init(2);
 	if (ret_val < 0){
-		rte_exit(EXIT_FAILURE,"\nError during kni init")
+		rte_exit(EXIT_FAILURE,"\nError during kni init");
 	}
 	printf("\nKNI intialization complete.");
 	
@@ -81,14 +81,14 @@ main(inti argc,char **argv){
 	if (rx_w_ring == NULL){
 		rte_exit(EXIT_FAILURE,"\nError while allocating rx_w_ring");
 	}
-	print("\nAllocated rx_w_ring");
+	printf("\nAllocated rx_w_ring");
 
 	struct rte_ring *w_tx_ring = rte_ring_create(RTE_W_TX_RING_NAME,64,rte_socket_id(),RING_F_SP_ENQ|RING_F_SC_DEQ);
 
 	if (w_tx_ring == NULL){
 		rte_exit(EXIT_FAILURE,"\nError while allocating w_tx_ring");
 	}
-	print("\nAllocated w_tx_ring");
+	printf("\nAllocated w_tx_ring");
 	// Setting up lcore args
 
 	memset(&slave_rx_args,0,sizeof(slave_rx_args));
@@ -115,7 +115,7 @@ main(inti argc,char **argv){
 	// launch remote cores 
 	rte_eal_remote_launch(slave_rx_main,&slave_rx_args,rx_lcore_id);
 	rte_eal_remote_launch(slave_tx_main,&slave_tx_args,tx_lcore_id);
-	rte_eal_remote_launch(slave_w_args,&slave_w_args,w_lcore_id);
+	rte_eal_remote_launch(slave_worker_main,&slave_w_args,w_lcore_id);
 
 
 	// Wait for cores to return 

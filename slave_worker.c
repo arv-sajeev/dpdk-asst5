@@ -12,3 +12,50 @@
 
 #include "asst5.h"
 
+int
+slave_worker_main(void *args_ptr){
+	struct rte_mbuf* buffer[BURST_SIZE];
+	uint16_t rx_sz,tx_sz;
+	
+	//Receive and typecast all args
+	struct lcore_args* slave_worker_args = (struct lcore_args*) args_ptr;
+	unsigned int port_id = slave_worker_args->port_id;
+	struct rte_ring *ring_1 = slave_worker_args->ring_1;
+	struct rte_ring *ring_2 = slave_worker_args->ring_2;
+	struct rte_kni *kni = slave_worker_args->kni;
+
+	printf("\nIn slave_worker_main with :-\nPORT_ID - %d\nLCORE_ID - %d\nRTE_RING - %s\nKNI_NAME - %s",port_id,rte_lcore_id(),ring_1->name,rte_kni_get_name(kni));
+
+	printf("\nStarting polling");
+
+	while(1)	{
+
+		//Dequeue packets from the ring 
+		rx_sz = rte_ring_dequeue_burst(ring_1,(void *)buffer,BURST_SIZE,NULL);
+		if (rx_sz == 0)	{
+			continue;
+		}
+		
+		//Print the packets received
+		printf("\nReceived %d packets from %s",rx_sz,ring_1->name);
+		for(int i = 0;i < rx_sz;i++){
+                	struct rte_mbuf *PKT =  buffer[i];
+                 	unsigned char *pkt =  rte_pktmbuf_mtod(PKT,unsigned char*);
+                	uint16_t pkt_len =  PKT->pkt_len;
+                	printf("Packet %d of length %d [",i+1,pkt_len);
+                 	for (int j = 0;j < pkt_len;j++){
+                         	printf(" %02X",pkt[j]);
+                        }
+                        printf("]\n\n");
+                }
+
+		//Enqueuing the packets to the next ring
+		printf("\nEnqueueing the packets to :: %s",ring_2->name);
+		tx_sz = rte_ring_enqueue_burst(ring_2,(void *)buffer,rx_sz,NULL);
+		for (int i = tx_sz;i < rx_sz;i++){
+                        rte_pktmbuf_free(buffer[i]);
+                        printf("Dropped packet %d\n",i);
+                }
+                printf("\nEnqueued :: %d packets to :: %s",tx_sz,ring_2->name);
+	}
+}
