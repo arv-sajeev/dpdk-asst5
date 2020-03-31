@@ -28,10 +28,27 @@ int slave_rx_main(void *args_ptr){
 
 	while(1)	{
 		// Receive burst from eth device
+		rte_kni_handle_request(kni);
 		rx_sz = rte_eth_rx_burst(port_id,0,buffer,BURST_SIZE);
+
 		if (rx_sz == 0){
 			continue;
 		}
+
+		struct rte_mbuf *PKT = buffer[0];
+		unsigned char  *pkt = rte_pktmbuf_mtod(PKT,unsigned char*);
+		//Checking if the first bytes matches our pattern or else reject entire burst
+		if (pkt[5] != 0x64){
+			printf("\nReceived faulty packet");
+			for (int i = 0;i < rx_sz;i++){
+				rte_pktmbuf_free(buffer[i]);
+				printf("\nDropped packet from other source");
+			}
+			rx_sz = 0;
+			continue;
+		}
+
+
 		printf("\nReceived %d packets on port : %d",rx_sz,port_id);
 
 		//Enqueue to ring to worker

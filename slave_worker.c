@@ -37,11 +37,25 @@ slave_worker_main(void *args_ptr){
 		}
 		
 		//Print the packets received
-		printf("\nReceived %d packets from %s",rx_sz,ring_1->name);
+		printf("\nReceived %d packets from %s\n",rx_sz,ring_1->name);
 		for(int i = 0;i < rx_sz;i++){
                 	struct rte_mbuf *PKT =  buffer[i];
                  	unsigned char *pkt =  rte_pktmbuf_mtod(PKT,unsigned char*);
                 	uint16_t pkt_len =  PKT->pkt_len;
+                	printf("Packet %d of length %d [",i+1,pkt_len);
+                 	for (int j = 0;j < pkt_len;j++){
+                         	printf(" %02X",pkt[j]);
+                        }
+                        printf("]\n\n");
+
+			//Flip Source and Dest to echo back
+			unsigned char t;
+			for (int i = 0;i < 6;i++){
+				t = pkt[i];
+				pkt[i] = pkt[i+6];
+				pkt[i+6] = t;
+			}
+			printf("\nThe flipped packet is");
                 	printf("Packet %d of length %d [",i+1,pkt_len);
                  	for (int j = 0;j < pkt_len;j++){
                          	printf(" %02X",pkt[j]);
