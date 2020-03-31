@@ -38,25 +38,22 @@ int slave_rx_main(void *args_ptr){
 		struct rte_mbuf *PKT = buffer[0];
 		unsigned char  *pkt = rte_pktmbuf_mtod(PKT,unsigned char*);
 		//Checking if the first bytes matches our pattern or else reject entire burst
-		if (pkt[5] != 0x64){
-			printf("\nReceived faulty packet");
-			for (int i = 0;i < rx_sz;i++){
-				rte_pktmbuf_free(buffer[i]);
-				printf("\nDropped packet from other source");
-			}
-			rx_sz = 0;
+		printf("\nIdentifying bytes are %02X and %02X",pkt[4],pkt[5]);
+		if (pkt[5] == 0x64 && pkt[4] == 0x35){
+			printf("\n\tReceived %d packets on port : %d",rx_sz,port_id);
+			tx_sz = rte_kni_tx_burst(kni,buffer,rx_sz);
+			printf("\nSend %d packets to kni :: %s",tx_sz,rte_kni_get_name(kni));
+		}
+
+		else	{
+			drop_packets(buffer,0,rx_sz,"Wrong Destination address");
 			continue;
 		}
 
 
-		printf("\nReceived %d packets on port : %d",rx_sz,port_id);
-
 		//Enqueue to ring to worker
-		tx_sz = rte_ring_enqueue_burst(ring_1,(void *)buffer,rx_sz,NULL);
-		for (int i = tx_sz;i < rx_sz;i++){
-			rte_pktmbuf_free(buffer[i]);
-			printf("Dropped packet %d\n",i);
-		}
-		printf("\nEnqueued :: %d packets to :: %s",tx_sz,ring_1->name);
+		//tx_sz = rte_ring_enqueue_burst(ring_1,(void *)buffer,rx_sz,NULL);
+		drop_packets(buffer,tx_sz,rx_sz,"Error while sending");
+		//printf("\nEnqueued :: %d packets to :: %s",tx_sz,ring_1->name);
 	}
 }

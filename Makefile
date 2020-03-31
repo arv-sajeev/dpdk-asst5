@@ -5,7 +5,7 @@
 APP = asst5
 
 # all source are stored in SRCS-y
-SRCS-y := main.c slave_rx.c slave_tx.c slave_worker.c kni.c port.c
+SRCS-y := main.c slave_rx.c slave_tx.c slave_worker.c kni.c port.c packet.c
 
 # Build using pkg-config variables if possible
 ifeq ($(shell pkg-config --exists libdpdk && echo 0),0)

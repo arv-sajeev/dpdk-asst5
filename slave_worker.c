@@ -38,16 +38,9 @@ slave_worker_main(void *args_ptr){
 		
 		//Print the packets received
 		printf("\nReceived %d packets from %s\n",rx_sz,ring_1->name);
+		display_packets(buffer,rx_sz);
+		/*
 		for(int i = 0;i < rx_sz;i++){
-                	struct rte_mbuf *PKT =  buffer[i];
-                 	unsigned char *pkt =  rte_pktmbuf_mtod(PKT,unsigned char*);
-                	uint16_t pkt_len =  PKT->pkt_len;
-                	printf("Packet %d of length %d [",i+1,pkt_len);
-                 	for (int j = 0;j < pkt_len;j++){
-                         	printf(" %02X",pkt[j]);
-                        }
-                        printf("]\n\n");
-
 			//Flip Source and Dest to echo back
 			unsigned char t;
 			for (int i = 0;i < 6;i++){
@@ -61,15 +54,12 @@ slave_worker_main(void *args_ptr){
                          	printf(" %02X",pkt[j]);
                         }
                         printf("]\n\n");
-                }
+                }*/
 
 		//Enqueuing the packets to the next ring
 		printf("\nEnqueueing the packets to :: %s",ring_2->name);
 		tx_sz = rte_ring_enqueue_burst(ring_2,(void *)buffer,rx_sz,NULL);
-		for (int i = tx_sz;i < rx_sz;i++){
-                        rte_pktmbuf_free(buffer[i]);
-                        printf("Dropped packet %d\n",i);
-                }
+		drop_packets(buffer,tx_sz,rx_sz,"Error while sending");
                 printf("\nEnqueued :: %d packets to :: %s",tx_sz,ring_2->name);
 	}
 }

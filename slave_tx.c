@@ -14,7 +14,7 @@
 
 int slave_tx_main(void *args_ptr)	{
         struct rte_mbuf* buffer[BURST_SIZE];
-        uint16_t rx_sz,tx_sz;
+        uint16_t rx_sz,tx_sz,f;
 
         //Receive and typecast all args
         struct lcore_args* slave_tx_args = (struct lcore_args*)args_ptr;
@@ -25,21 +25,27 @@ int slave_tx_main(void *args_ptr)	{
         printf("\nIn slave_tx_main with :-\nPORT_ID - %d\nLCORE_ID - %d\nRTE_RING - %s\nKNI_NAME - %s",port_id,rte_lcore_id(),ring_2->name,rte_kni_get_name(kni));
 
         printf("\nStarting polling");
-
         while(1)        {
                 // Dequeue packets from ring 
+		f = 0;
                 rx_sz = rte_ring_dequeue_burst(ring_2,(void *)buffer,BURST_SIZE,NULL);
                 if (rx_sz == 0){
-                        continue;
+			rx_sz = rte_kni_rx_burst(kni,buffer,BURST_SIZE);
+			if (rx_sz == 0)	{	
+				continue;
+			}
+			f = 1;
+			printf("\nReceived %d packets from : %s",rx_sz,rte_kni_get_name(kni));
                 }
-                printf("\nReceived %d packets from : %s",rx_sz,ring_2->name);
-
+		if (f == 0)	{
+                	printf("\nReceived %d packets from : %s",rx_sz,ring_2->name);
+		}
                 //Echo back to source port
+		display_packets(buffer,rx_sz);
                 tx_sz = rte_eth_tx_burst(PORT,0,buffer,rx_sz);
-                for (int i = tx_sz;i < rx_sz;i++){
-                        rte_pktmbuf_free(buffer[i]);
-                        printf("Dropped packet %d\n",i);
-                }
+		if (tx_sz != rx_sz){
+                	drop_packets(buffer,tx_sz,rx_sz,"Error while sending");
+		}
                 printf("\nEchoed:: %d packets to PORT :: %d",tx_sz,port_id);
         }
 }

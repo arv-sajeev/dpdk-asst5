@@ -29,3 +29,8 @@ int slave_tx_main(void *args_ptr);
 
 struct rte_kni* kni_create(const char* name,struct rte_mempool *mempool);
 int init_port(int port_id,struct rte_mempool* mempool);
+
+//Packet handling functions
+
+int drop_packets(struct rte_mbuf** buffer,int start,int end,const char *msg);
+int display_packets(struct rte_mbuf** packet,int rx_sz);
